@@ -1,0 +1,12 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    oj (2.11.4)
+    thrift (0.9.2.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  oj
+  thrift

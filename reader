@@ -1,0 +1,48 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'json'
+require 'oj'
+
+$: << 'lib/thrift'
+
+Dir.glob('lib/thrift/*_types.rb').each do |file|
+  require File.basename(file)
+end
+
+class Option
+  attr_accessor :format, :struct, :input, :pretty
+  def initialize(args)
+    opt = OptionParser.new
+    opt.on('--format binary|json') { |v| @format = v.downcase }
+    opt.on('--struct StructName') { |v| @struct = v }
+    opt.on('--input path') { |v| @input = v }
+    @pretty = false
+    opt.on('--pretty') { |v| @pretty = true }
+    opt.parse!(args)
+
+    raise 'invalid format' if !['binary', 'json'].include?(@format)
+  end
+end
+
+def run(option)
+  empty = Object.const_get(option.struct).new
+  input = option.input ? File.read(option.input) : STDIN.read
+  case option.format
+  when 'binary'
+    deser = Thrift::Deserializer.new(Thrift::BinaryProtocolFactory.new)
+    obj = deser.deserialize(empty, input)
+  when 'json'
+    deser = Thrift::Deserializer.new(Thrift::JsonProtocolFactory.new)
+    obj = deser.deserialize(empty, input)
+  end
+  json = Oj.dump(obj)
+  puts option.pretty ? JSON.pretty_generate(JSON.parse(json)) : json
+end
+
+def main
+  option = Option.new(ARGV)
+  run(option)
+end
+
+main
